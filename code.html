@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Sistema de comunicación visual mediante pictogramas para personas con TEA">
+    <meta name="theme-color" content="#5BA4B5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>PictoCom — Comunicación Visual TEA</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #F7F3EE;
+            --bg-alt: #EDE8E1;
+            --surface: #FFFFFF;
+            --surface-hover: #FAF8F5;
+            --primary: #5BA4B5;
+            --primary-hover: #4A8F9E;
+            --primary-light: #E8F4F8;
+            --primary-pale: #F0F9FB;
+            --accent: #F0A830;
+            --accent-light: #FFF3DC;
+            --text: #2C3E50;
+            --text-secondary: #6B7B8D;
+            --text-light: #95A5A6;
+            --border: #E8E0D8;
+            --border-light: #F0EBE5;
+            --success: #5CB85C;
+            --success-light: #E8F8E8;
+            --danger: #E87474;
+            --danger-light: #FDE8E8;
+            --shadow-sm: 0 2px 8px rgba(44,62,80,0.06);
+            --shadow-md: 0 4px 16px rgba(44,62,80,0.08);
+            --shadow-lg: 0 8px 32px rgba(44,62,80,0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-lg: 24px;
+            --radius-full: 9999px;
+            --nav-height: 72px;
+            --header-height: 60px;
+            --font: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100dvh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100dvh;
+            max-width: 100%;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .logo h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .logo h1 span {
+            color: var(--primary);
+        }
+
+        /* ===== MAIN ===== */
+        main {
+            flex: 1;
+            max-width: 960px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px 16px;
+            padding-bottom: calc(var(--nav-height) + 24px);
+        }
+
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== SECTION TITLES ===== */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .icon {
+            font-size: 1.2rem;
+        }
+
+        /* ===== QUICK PHRASES ===== */
+        .quick-phrases {
+            margin-bottom: 28px;
+        }
+
+        .phrases-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .phrases-scroll::-webkit-scrollbar { display: none; }
+
+        .phrase-chip {
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-full);
+            padding: 10px 20px;
+            font-family: var(--font);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .phrase-chip:hover, .phrase-chip:active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary-hover);
+            transform: scale(1.03);
+        }
+
+        /* ===== INPUT AREA ===== */
+        .input-area {
+            margin-bottom: 28px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(91,164,181,0.15);
+        }
+
+        #text-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 16px 18px;
+            font-family: var(--font);
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+            background: transparent;
+            resize: none;
+            min-height: 56px;
+            max-height: 120px;
+        }
+
+        #text-input::placeholder {
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        .voice-btn {
+            width: 56px;
+            min-height: 56px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            flex-shrink: 0;
+        }
+
+        .voice-btn:hover { color: var(--primary); }
+        .voice-btn.listening {
+            color: var(--danger);
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .generate-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: var(--shadow-md);
+        }
+
+        .generate-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+        .generate-btn:active { transform: translateY(0); }
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== SEQUENCE CONTAINER ===== */
+        .sequence-section {
+            margin-bottom: 28px;
+        }
+
+        .sequence-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .sequence-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            font-family: var(--font);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .action-btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .action-btn.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .action-btn.danger:hover {
+            background: var(--danger-light);
+        }
+
+        /* ===== PICTOGRAM SEQUENCE ===== */
+        .sequence {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 8px 4px 16px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .sequence::-webkit-scrollbar { display: none; }
+
+        .picto-card {
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            width: 140px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: grab;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        .picto-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .picto-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            border-style: dashed;
+        }
+
+        .picto-card.drag-over {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .picto-card .delete-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            background: var(--danger-light);
+            color: var(--danger);
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .picto-card:hover .delete-btn,
+        .picto-card .delete-btn:focus { opacity: 1; }
+
+        .picto-img-wrap {
+            width: 100px;
+            height: 100px;
+            border-radius: var(--radius-sm);
+            background: var(--primary-pale);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .picto-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .picto-img-wrap .placeholder {
+            font-size: 2.5rem;
+            opacity: 0.4;
+        }
+
+        .picto-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            line-height: 1.2;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        .picto-card.no-image .picto-img-wrap {
+            background: var(--bg-alt);
+        }
+
+        /* ===== LOADING ===== */
+        .loading-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            gap: 14px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            text-align: center;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            max-width: 280px;
+        }
+
+        /* ===== ROUTINES GRID ===== */
+        .routines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 14px;
+        }
+
+        .routine-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .routine-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .routine-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .routine-preview {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .routine-preview img {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            object-fit: contain;
+            background: var(--primary-pale);
+        }
+
+        .routine-date {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .routine-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .routine-action-btn {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            font-family: var(--font);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .routine-action-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .routine-action-btn.delete {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .routine-action-btn.delete:hover {
+            background: var(--danger-light);
+        }
+
+        /* ===== SEARCH ===== */
+        .search-bar {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 16px 18px 16px 48px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            font-family: var(--font);
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(91,164,181,0.15);
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        .search-bar .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--text-light);
+            pointer-events: none;
+        }
+
+        /* ===== QUICK SEARCH SECTION ===== */
+        .quick-search-section {
+            margin-bottom: 28px;
+            background: var(--primary-pale);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 2px solid var(--primary-light);
+        }
+
+        .quick-search-bar {
+            margin-bottom: 12px;
+        }
+
+        .quick-search-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .quick-search-result-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: grab;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        .quick-search-result-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .quick-search-result-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            border-style: dashed;
+        }
+
+        .quick-search-result-card img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+        }
+
+        .quick-search-result-card .label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        /* Hide this section in search view */
+        #view-search .quick-search-section,
+        #view-routines .quick-search-section {
+            display: none;
+        }
+
+        .search-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .search-result-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .search-result-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .search-result-card.added {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+
+        .search-result-card img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .search-result-card .label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text);
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* ===== FULLSCREEN MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(44,62,80,0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+        }
+
+        .modal-header h2 {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .fullscreen-sequence {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .fullscreen-card {
+            flex-shrink: 0;
+            scroll-snap-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            min-width: 200px;
+        }
+
+        .fullscreen-card .fs-img-wrap {
+            width: 180px;
+            height: 180px;
+            background: white;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .fullscreen-card .fs-img-wrap img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+        }
+
+        .fullscreen-card .fs-label {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* ===== SAVE DIALOG ===== */
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1001;
+            background: rgba(44,62,80,0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .dialog-overlay.active {
+            display: flex;
+        }
+
+        .dialog-box {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+            animation: dialogIn 0.3s ease;
+        }
+
+        @keyframes dialogIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .dialog-box h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .dialog-box input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            outline: none;
+            margin-bottom: 20px;
+            transition: border-color 0.2s ease;
+        }
+
+        .dialog-box input:focus {
+            border-color: var(--primary);
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .dialog-actions button {
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dialog-actions .cancel-btn {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .dialog-actions .cancel-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .dialog-actions .save-btn {
+            background: var(--primary);
+            border: 2px solid var(--primary);
+            color: white;
+        }
+
+        .dialog-actions .save-btn:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        nav#bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            height: var(--nav-height);
+            background: var(--surface);
+            border-top: 1px solid var(--border-light);
+            box-shadow: 0 -2px 12px rgba(44,62,80,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: var(--radius-sm);
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+        }
+
+        .nav-btn svg {
+            width: 26px;
+            height: 26px;
+            stroke: var(--text-light);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.2s ease;
+        }
+
+        .nav-btn span {
+            font-family: var(--font);
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-light);
+            transition: color 0.2s ease;
+        }
+
+        .nav-btn.active svg { stroke: var(--primary); }
+        .nav-btn.active span { color: var(--primary); }
+
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--text);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--radius-full);
+            font-family: var(--font);
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+            pointer-events: auto;
+            white-space: nowrap;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateY(-12px); }
+        }
+
+        /* ===== HIDDEN ===== */
+        .hidden { display: none !important; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (min-width: 600px) {
+            .picto-card { width: 160px; }
+            .picto-img-wrap { width: 120px; height: 120px; }
+            .fullscreen-card .fs-img-wrap { width: 220px; height: 220px; }
+            .fullscreen-card .fs-label { font-size: 1.8rem; }
+        }
+
+        @media (min-width: 900px) {
+            main { padding: 28px 24px; }
+            .sequence { flex-wrap: wrap; overflow-x: visible; }
+            .picto-card { width: 170px; }
+        }
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ===== HIGH CONTRAST ===== */
+        @media (prefers-contrast: high) {
+            :root {
+                --border: #666;
+                --text-secondary: #333;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- HEADER -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">🧩</div>
+                    <h1>Picto<span>Com</span></h1>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main>
+            <!-- ===== HOME VIEW ===== -->
+            <section id="view-home" class="view active">
+                <!-- Quick Phrases -->
+                <div class="quick-phrases">
+                    <h2 class="section-title"><span class="icon">⚡</span> Frases rápidas</h2>
+                    <div class="phrases-scroll" id="phrases-scroll"></div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <h2 class="section-title"><span class="icon">✏️</span> Escribe o dicta tu mensaje</h2>
+                    <div class="input-wrapper">
+                        <textarea id="text-input" rows="2" placeholder="Ejemplo: Quiero comer una manzana..."></textarea>
+                        <button class="voice-btn" id="btn-voice" title="Dictar con voz" aria-label="Dictar con voz">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                        </button>
+                    </div>
+                    <button class="generate-btn" id="btn-generate">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                        Generar pictogramas
+                    </button>
+                </div>
+
+                <!-- Quick Search Bar -->
+                <div class="quick-search-section">
+                    <h2 class="section-title"><span class="icon">🔍</span> Búsqueda rápida</h2>
+                    <div class="search-bar quick-search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input type="search" id="quick-search-input" placeholder="Busca pictogramas para añadir...">
+                    </div>
+                    <div id="quick-search-results" class="quick-search-results"></div>
+                </div>
+
+                <!-- Sequence Section -->
+                <div id="sequence-section" class="sequence-section hidden">
+                    <div class="sequence-header">
+                        <h2 class="section-title"><span class="icon">🖼️</span> Secuencia visual</h2>
+                        <div class="sequence-actions">
+                            <button class="action-btn" id="btn-fullscreen" title="Pantalla completa">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                                Pantalla completa
+                            </button>
+                            <button class="action-btn primary" id="btn-save" title="Guardar rutina">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                Guardar
+                            </button>
+                            <button class="action-btn danger" id="btn-clear" title="Limpiar secuencia">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sequence" class="sequence"></div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="loading-indicator hidden">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Buscando pictogramas...</p>
+                </div>
+            </section>
+
+            <!-- ===== ROUTINES VIEW ===== -->
+            <section id="view-routines" class="view">
+                <h2 class="section-title"><span class="icon">📋</span> Mis Rutinas</h2>
+                <div id="routines-grid" class="routines-grid"></div>
+                <div id="no-routines" class="empty-state hidden">
+                    <div class="empty-icon">📁</div>
+                    <p>No tienes rutinas guardadas aún. Crea una secuencia y guárdala.</p>
+                </div>
+            </section>
+
+            <!-- ===== SEARCH VIEW ===== -->
+            <section id="view-search" class="view">
+                <h2 class="section-title"><span class="icon">🔍</span> Buscar pictogramas</h2>
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="search" id="search-input" placeholder="Buscar en ARASAAC...">
+                </div>
+                <div id="search-results" class="search-results"></div>
+                <div id="no-results" class="empty-state hidden">
+                    <div class="empty-icon">🔎</div>
+                    <p>Busca palabras para encontrar pictogramas.</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- BOTTOM NAV -->
+        <nav id="bottom-nav">
+            <div class="nav-inner">
+                <button class="nav-btn active" data-view="home" aria-label="Inicio">
+                    <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Inicio</span>
+                </button>
+                <button class="nav-btn" data-view="routines" aria-label="Rutinas">
+                    <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                    <span>Rutinas</span>
+                </button>
+                <button class="nav-btn" data-view="search" aria-label="Buscar">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <span>Buscar</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- FULLSCREEN MODAL -->
+        <div id="fullscreen-modal" class="modal-overlay">
+            <div class="modal-header">
+                <h2 id="fullscreen-title">Secuencia</h2>
+                <button class="modal-close" id="btn-close-fullscreen" aria-label="Cerrar">✕</button>
+            </div>
+            <div id="fullscreen-sequence" class="fullscreen-sequence"></div>
+        </div>
+
+        <!-- SAVE DIALOG -->
+        <div id="save-dialog" class="dialog-overlay">
+            <div class="dialog-box">
+                <h3>Guardar rutina</h3>
+                <input type="text" id="routine-name-input" placeholder="Nombre de la rutina..." maxlength="50">
+                <div class="dialog-actions">
+                    <button class="cancel-btn" id="btn-cancel-save">Cancelar</button>
+                    <button class="save-btn" id="btn-confirm-save">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST CONTAINER -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script>
+    /* ================================================================
+       PICTOCOM — Sistema Inteligente de Comunicación Visual TEA
+       ================================================================ */
+
+    // ===== CONFIGURATION =====
+    const CONFIG = {
+        ARASAAC_API: 'https://api.arasaac.org/api/pictograms',
+        ARASAAC_IMG: 'https://static.arasaac.org/pictograms',
+        LANGUAGE: 'es',
+        IMG_SIZE: 500,
+        CACHE_NAME: 'pictocom-cache-v1',
+        DB_NAME: 'PictoComDB',
+        DB_VERSION: 1,
+        STORE_NAME: 'routines',
+        DEBOUNCE_MS: 400
+    };
+
+    // ===== SPANISH NLP MODULE =====
+    const SpanishNLP = (() => {
+        const STOP_WORDS = new Set([
+            'el','la','los','las','un','una','unos','unas','de','del','al',
+            'en','a','por','con','para','sin','sobre','entre','hasta','desde',
+            'y','e','o','u','ni','pero','sino','que','como','cual','cuales',
+            'es','son','está','están','fue','ser','haber','hay','tiene','tengo',
+            'se','su','sus','mi','mis','tu','tus','nuestro','nuestra','me','te',
+            'nos','os','le','les','lo','muy','más','menos','tan','también',
+            'ya','no','sí','si','bien','así','aquí','ahí','allí','entonces',
+            'cuando','donde','porque','aunque','mientras','después','antes',
+            'ahora','siempre','nunca','algo','nada','todo','cada','otro','otra',
+            'esto','eso','esta','ese','esa','estos','esas','esos','estas',
+            'hay','he','ha','han','hemos','has','vais','van',
+            'del','eso','ella','él','ellos','ellas','nosotros','nosotras',
+            'vosotros','vosotras','usted','ustedes'
+        ]);
+
+        const PRONOUN_MAP = {
+            'yo': 'YO', 'yó': 'YO', 'mi': 'MI', 'mío': 'MI', 'mía': 'MI', 'míos': 'MI', 'mías': 'MI',
+            'tú': 'TÚ', 'tu': 'TÚ', 'vos': 'TÚ', 'te': 'TÚ', 'ti': 'TÚ', 'tuyo': 'TÚ', 'tuya': 'TÚ',
+            'él': 'ÉL', 'lo': 'ÉL', 'le': 'ÉL',
+            'ella': 'ELLA', 'la': 'ELLA',
+            'usted': 'USTED', 'ud': 'USTED', 'ustedes': 'USTEDES',
+            'nosotros': 'NOSOTROS', 'nosotras': 'NOSOTROS', 'nos': 'NOSOTROS', 'nuestro': 'NOSOTROS', 'nuestra': 'NOSOTROS',
+            'vosotros': 'VOSOTROS', 'vosotras': 'VOSOTROS', 'os': 'VOSOTROS', 'vuestro': 'VOSOTROS',
+            'ellos': 'ELLOS', 'los': 'ELLOS', 'les': 'ELLOS',
+            'ellas': 'ELLAS', 'las': 'ELLAS'
+        };
+
+        const VERB_INFINITIVE_MAP = {
+            'quiero': 'querer', 'quiere': 'querer', 'quieren': 'querer', 'queremos': 'querer', 'querías': 'querer',
+            'necesito': 'necesitar', 'necesita': 'necesitar', 'necesitan': 'necesitar', 'necesitamos': 'necesitar',
+            'voy': 'ir', 'va': 'ir', 'vamos': 'ir', 'van': 'ir', 'vas': 'ir', 'fui': 'ir', 'fue': 'ir', 'fueron': 'ir',
+            'como': 'comer', 'come': 'comer', 'comen': 'comer', 'comemos': 'comer', 'comía': 'comer', 'comiste': 'comer',
+            'bebo': 'beber', 'bebe': 'beber', 'beben': 'beber', 'bebemos': 'beber', 'bebía': 'beber',
+            'juego': 'jugar', 'juega': 'jugar', 'jugamos': 'jugar', 'juegan': 'jugar', 'jugaba': 'jugar', 'jugó': 'jugar',
+            'duermo': 'dormir', 'duerme': 'dormir', 'dormimos': 'dormir', 'duermen': 'dormir', 'dormía': 'dormir',
+            'corro': 'correr', 'corre': 'correr', 'corremos': 'correr', 'corren': 'correr', 'corría': 'correr',
+            'camino': 'caminar', 'camina': 'caminar', 'caminamos': 'caminar', 'caminan': 'caminar', 'caminaba': 'caminar',
+            'veo': 'ver', 've': 'ver', 'ven': 'ver', 'vemos': 'ver', 'veía': 'ver', 'viste': 'ver',
+            'escucho': 'escuchar', 'escucha': 'escuchar', 'escuchamos': 'escuchar', 'escuchaba': 'escuchar',
+            'leo': 'leer', 'lee': 'leer', 'leemos': 'leer', 'leen': 'leer', 'leía': 'leer',
+            'escribo': 'escribir', 'escribe': 'escribir', 'escribimos': 'escribir', 'escriben': 'escribir', 'escribía': 'escribir',
+            'digo': 'decir', 'dice': 'decir', 'dicen': 'decir', 'decimos': 'decir', 'decía': 'decir',
+            'hago': 'hacer', 'hace': 'hacer', 'hacen': 'hacer', 'hacemos': 'hacer', 'hacía': 'hacer', 'hizo': 'hacer',
+            'tengo': 'tener', 'tiene': 'tener', 'tienen': 'tener', 'tenemos': 'tener', 'tenía': 'tener', 'tuvo': 'tener',
+            'soy': 'ser', 'eres': 'ser', 'somos': 'ser', 'son': 'ser', 'era': 'ser', 'eras': 'ser', 'éramos': 'ser',
+            'estoy': 'estar', 'estás': 'estar', 'estamos': 'estar', 'están': 'estar', 'estaba': 'estar', 'estaban': 'estar',
+            'puedo': 'poder', 'puede': 'poder', 'podemos': 'poder', 'pueden': 'poder', 'podía': 'poder', 'podían': 'poder',
+            'sé': 'saber', 'sabe': 'saber', 'sabemos': 'saber', 'saben': 'saber', 'sabía': 'saber',
+            'doy': 'dar', 'da': 'dar', 'damos': 'dar', 'dan': 'dar', 'daba': 'dar',
+            'vengo': 'venir', 'viene': 'venir', 'venimos': 'venir', 'vienen': 'venir', 'venía': 'venir',
+            'salgo': 'salir', 'sale': 'salir', 'salimos': 'salir', 'salen': 'salir', 'salía': 'salir',
+            'pongo': 'poner', 'pone': 'poner', 'ponemos': 'poner', 'ponen': 'poner', 'ponía': 'poner',
+            'pienso': 'pensar', 'piensa': 'pensar', 'pensamos': 'pensar', 'piensan': 'pensar', 'pensaba': 'pensar',
+            'siento': 'sentir', 'siente': 'sentir', 'sentimos': 'sentir', 'sienten': 'sentir', 'sentía': 'sentir',
+            'amo': 'amar', 'ama': 'amar', 'amamos': 'amar', 'aman': 'amar', 'amaba': 'amar',
+            'trabajo': 'trabajar', 'trabaja': 'trabajar', 'trabajamos': 'trabajar', 'trabajaba': 'trabajar',
+            'estudio': 'estudiar', 'estudia': 'estudiar', 'estudiamos': 'estudiar', 'estudiaba': 'estudiar',
+            'cocino': 'cocinar', 'cocina': 'cocinar', 'cocinamos': 'cocinar', 'cocinaba': 'cocinar',
+            'limpio': 'limpiar', 'limpia': 'limpiar', 'limpiamos': 'limpiar', 'limpiaba': 'limpiar',
+            'baño': 'bañar', 'baña': 'bañar', 'bañamos': 'bañar', 'bañaba': 'bañar',
+            'lavo': 'lavar', 'lava': 'lavar', 'lavamos': 'lavar', 'lavaba': 'lavar',
+            'visto': 'vestir', 'viste': 'vestir', 'vestimos': 'vestir', 'vestía': 'vestir',
+            'ayudo': 'ayudar', 'ayuda': 'ayudar', 'ayudamos': 'ayudar', 'ayudaba': 'ayudar',
+            'pido': 'pedir', 'pide': 'pedir', 'pedimos': 'pedir', 'piden': 'pedir', 'pedía': 'pedir',
+            'miro': 'mirar', 'mira': 'mirar', 'miramos': 'mirar', 'miraban': 'mirar',
+            'tomo': 'tomar', 'toma': 'tomar', 'tomamos': 'tomar', 'tomaba': 'tomar',
+            'subo': 'subir', 'sube': 'subir', 'subimos': 'subir', 'subía': 'subir',
+            'bajo': 'bajar', 'baja': 'bajar', 'bajamos': 'bajar', 'bajaba': 'bajar',
+            'juré': 'jurar', 'juro': 'jurar', 'jura': 'jurar',
+            'nado': 'nadar', 'nada': 'nadar', 'nadaba': 'nadar',
+            'canto': 'cantar', 'canta': 'cantar', 'cantaba': 'cantar',
+            'bailo': 'bailar', 'baila': 'bailar', 'bailaba': 'bailar',
+            'salto': 'saltar', 'salta': 'saltar', 'saltaba': 'saltar'
+        };
+
+        const ADJECTIVE_SYNONYMS = {
+            'feliz': 'contento', 'alegre': 'contento', 'contento': 'contento', 'happy': 'contento',
+            'triste': 'triste', 'sad': 'triste', 'pena': 'triste',
+            'enojado': 'enfadado', 'molesto': 'enfadado', 'furioso': 'enfadado', 'angry': 'enfadado', 'enfadado': 'enfadado',
+            'cansado': 'cansado', 'tired': 'cansado', 'agotado': 'cansado',
+            'enfermo': 'enfermo', 'sick': 'enfermo', 'malo': 'enfermo',
+            'bien': 'bien', 'bueno': 'bien', 'okay': 'bien',
+            'mal': 'mal', 'malo': 'mal', 'bad': 'mal',
+            'grande': 'grande', 'big': 'grande', 'enorme': 'grande',
+            'pequeño': 'pequeño', 'small': 'pequeño', 'diminuto': 'pequeño', 'tiny': 'pequeño',
+            'nuevo': 'nuevo', 'new': 'nuevo',
+            'viejo': 'viejo', 'old': 'viejo', 'antiguo': 'viejo',
+            'bonito': 'bonito', 'pretty': 'bonito', 'hermoso': 'bonito', 'lindo': 'bonito',
+            'feo': 'feo', 'ugly': 'feo',
+            'rápido': 'rápido', 'fast': 'rápido', 'velocidad': 'rápido',
+            'lento': 'lento', 'slow': 'lento',
+            'caliente': 'caliente', 'hot': 'caliente',
+            'frío': 'frío', 'cold': 'frío',
+            'sucio': 'sucio', 'dirty': 'sucio',
+            'limpio': 'limpio', 'clean': 'limpio',
+            'mojado': 'mojado', 'wet': 'mojado',
+            'seco': 'seco', 'dry': 'seco',
+            'lleno': 'lleno', 'full': 'lleno',
+            'vacío': 'vacío', 'empty': 'vacío',
+            'fácil': 'fácil', 'easy': 'fácil',
+            'difícil': 'difícil', 'hard': 'difícil',
+            'corto': 'corto', 'short': 'corto',
+            'largo': 'largo', 'long': 'largo',
+            'alto': 'alto', 'tall': 'alto',
+            'bajo': 'bajo', 'short': 'bajo',
+            'fuerte': 'fuerte', 'strong': 'fuerte',
+            'débil': 'débil', 'weak': 'débil',
+            'valiente': 'valiente', 'brave': 'valiente',
+            'miedoso': 'miedoso', 'scared': 'miedoso',
+            'amable': 'amable', 'kind': 'amable',
+            'malo': 'malo', 'mean': 'malo'
+        };
+
+        const NOUN_SYNONYMS = {
+            'casa': 'casa', 'hogar': 'casa',
+            'escuela': 'escuela', 'colegio': 'escuela',
+            'comida': 'comida', 'almuerzo': 'comida', 'cena': 'comida', 'desayuno': 'comida', 'snack': 'comida',
+            'agua': 'agua', 'leche': 'leche', 'jugo': 'jugo', 'zumo': 'jugo', 'refresco': 'bebida',
+            'manzana': 'manzana', 'plátano': 'plátano', 'banana': 'plátano', 'naranja': 'naranja', 'fresa': 'fresa', 'fruta': 'fruta',
+            'pelota': 'pelota', 'balón': 'pelota', 'juguete': 'juguete', 'muñeca': 'muñeca', 'coche': 'coche',
+            'parque': 'parque', 'jardín': 'jardín', 'patio': 'patio', 'plaza': 'plaza',
+            'baño': 'baño', 'wc': 'baño', 'inodoro': 'baño', 'lavabo': 'lavabo',
+            'cama': 'cama', 'dormitorio': 'dormitorio', 'cuarto': 'dormitorio', 'habitación': 'dormitorio',
+            'mamá': 'madre', 'mama': 'madre', 'madre': 'madre', 'mami': 'madre',
+            'papá': 'padre', 'papa': 'padre', 'padre': 'padre', 'papi': 'padre',
+            'profesor': 'profesor', 'maestro': 'profesor', 'profe': 'profesor', 'maestra': 'profesor',
+            'doctor': 'doctor', 'médico': 'doctor', 'enfermera': 'enfermera', 'dentista': 'dentista',
+            'amigo': 'amigo', 'amiga': 'amigo', 'compañero': 'amigo', 'hermano': 'hermano', 'hermana': 'hermana',
+            'perro': 'perro', 'gato': 'gato', 'mascota': 'mascota', 'pájaro': 'pájaro', 'pez': 'pez',
+            'libro': 'libro', 'cuaderno': 'cuaderno', 'papel': 'papel', 'lápiz': 'lápiz', 'pluma': 'pluma',
+            'zapato': 'zapato', 'zapatos': 'zapato', 'tenis': 'zapato',
+            'camisa': 'camisa', 'pantalón': 'pantalón', 'pantalones': 'pantalón', 'falda': 'falda', 'vestido': 'vestido', 'abrigo': 'abrigo',
+            'sombrero': 'sombrero', 'gorra': 'gorra', 'bufanda': 'bufanda', 'guante': 'guante',
+            'sol': 'sol', 'luna': 'luna', 'lluvia': 'lluvia', 'nieve': 'nieve', 'nubes': 'nubes', 'clima': 'clima',
+            'auto': 'coche', 'carro': 'coche', 'coche': 'coche', 'automóvil': 'coche', 'carro': 'coche',
+            'autobús': 'autobús', 'bus': 'autobús', 'transporte': 'transporte', 'tren': 'tren', 'bicicleta': 'bicicleta',
+            'teléfono': 'teléfono', 'celular': 'teléfono', 'móvil': 'teléfono', 'phone': 'teléfono',
+            'computadora': 'ordenador', 'ordenador': 'ordenador', 'computador': 'ordenador', 'laptop': 'ordenador', 'pc': 'ordenador',
+            'televisión': 'televisión', 'televisor': 'televisión', 'tv': 'televisión', 'tele': 'televisión',
+            'hambre': 'hambre', 'sed': 'sed', 'cansancio': 'cansancio', 'sueño': 'sueño',
+            'dolor': 'dolor', 'cabeza': 'cabeza', 'barriga': 'barriga', 'estómago': 'estómago', 'panza': 'estómago',
+            'escena': 'escena', 'película': 'película', 'música': 'música', 'canción': 'canción', 'ritmo': 'ritmo',
+            'dinero': 'dinero', 'pesos': 'dinero', 'euros': 'dinero', 'moneda': 'moneda',
+            'regalo': 'regalo', 'sorpresa': 'sorpresa', 'premio': 'premio',
+            'hospital': 'hospital', 'farmacia': 'farmacia', 'tienda': 'tienda', 'mercado': 'mercado', 'supermercado': 'supermercado',
+            'iglesia': 'iglesia', 'templo': 'templo', 'religión': 'religión'
+        };
+
+        const PHRASE_PATTERNS = [
+            { pattern: /tengo hambre/i, output: ['YO', 'HAMBRE'] },
+            { pattern: /tengo sed/i, output: ['YO', 'SED'] },
+            { pattern: /tengo frío/i, output: ['YO', 'FRÍO'] },
+            { pattern: /tengo calor/i, output: ['YO', 'CALOR'] },
+            { pattern: /tengo sueño/i, output: ['YO', 'SUEÑO'] },
+            { pattern: /tengo dolor/i, output: ['YO', 'DOLOR'] },
+            { pattern: /tengo miedo/i, output: ['YO', 'MIEDO'] },
+            { pattern: /me duele la cabeza/i, output: ['YO', 'DOLOR', 'CABEZA'] },
+            { pattern: /me duele la barriga/i, output: ['YO', 'DOLOR', 'BARRIGA'] },
+            { pattern: /me duele el estómago/i, output: ['YO', 'DOLOR', 'ESTÓMAGO'] },
+            { pattern: /buen(os)? días/i, output: ['BUENOS DÍAS'] },
+            { pattern: /buen(as)? tardes/i, output: ['BUENAS TARDES'] },
+            { pattern: /buen(as)? noches/i, output: ['BUENAS NOCHES'] },
+            { pattern: /por favor/i, output: ['POR FAVOR'] },
+            { pattern: /muchas gracias/i, output: ['GRACIAS'] },
+            { pattern: /gracias/i, output: ['GRACIAS'] },
+            { pattern: /de nada/i, output: ['DE NADA'] },
+            { pattern: /lo siento/i, output: ['DISCULPA'] },
+            { pattern: /perdón|disculpa/i, output: ['DISCULPA'] },
+            { pattern: /ir al baño/i, output: ['IR', 'BAÑO'] },
+            { pattern: /ir al parque/i, output: ['IR', 'PARQUE'] },
+            { pattern: /ir a la escuela/i, output: ['IR', 'ESCUELA'] },
+            { pattern: /ir a casa/i, output: ['IR', 'CASA'] },
+            { pattern: /ver televis(ión|or)/i, output: ['VER', 'TELEVISIÓN'] },
+            { pattern: /quiero jugar/i, output: ['QUERER', 'JUGAR'] },
+            { pattern: /quiero comer/i, output: ['QUERER', 'COMER'] },
+            { pattern: /quiero beber/i, output: ['QUERER', 'BEBER'] },
+            { pattern: /quiero dormir/i, output: ['QUERER', 'DORMIR'] },
+            { pattern: /quiero ir/i, output: ['QUERER', 'IR'] },
+            { pattern: /vamos al parque/i, output: ['VAMOS', 'PARQUE'] },
+            { pattern: /vamos a casa/i, output: ['VAMOS', 'CASA'] },
+            { pattern: /vamos a la escuela/i, output: ['VAMOS', 'ESCUELA'] },
+            { pattern: /estoy feliz/i, output: ['YO', 'CONTENTO'] },
+            { pattern: /estoy triste/i, output: ['YO', 'TRISTE'] },
+            { pattern: /estoy enfadado/i, output: ['YO', 'ENFADADO'] },
+            { pattern: /estoy cansado/i, output: ['YO', 'CANSADO'] },
+            { pattern: /estoy bien/i, output: ['YO', 'BIEN'] },
+            { pattern: /estoy mal/i, output: ['YO', 'MAL'] },
+            { pattern: /me siento bien/i, output: ['YO', 'BIEN'] },
+            { pattern: /me siento mal/i, output: ['YO', 'MAL'] },
+            { pattern: /necesito ayuda/i, output: ['NECESITAR', 'AYUDA'] },
+            { pattern: /necesito ir/i, output: ['NECESITAR', 'IR'] },
+            { pattern: /me gusta/i, output: ['GUSTAR'] },
+            { pattern: /no me gusta/i, output: ['NO', 'GUSTAR'] },
+            { pattern: /hola/i, output: ['HOLA'] },
+            { pattern: /adiós|hasta luego/i, output: ['ADIÓS'] },
+            { pattern: /buena suerte/i, output: ['SUERTE'] },
+        ];
+
+        function process(text) {
+            if (!text || !text.trim()) return [];
+
+            // 1. Check phrase patterns first
+            for (const p of PHRASE_PATTERNS) {
+                if (p.pattern.test(text)) {
+                    return p.output;
+                }
+            }
+
+            // 2. Normalize
+            let normalized = text
+                .toLowerCase()
+                .replace(/[¿¡!?.,;:()"\[\]{}…—–\-]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            // 3. Tokenize
+            let tokens = normalized.split(' ').filter(t => t.length > 0);
+
+            // 4. Remove plurals
+            tokens = tokens.map(t => {
+                // Simple plural removal: es → e, s → nothing
+                if (t.endsWith('es') && t.length > 3) return t.slice(0, -2);
+                if (t.endsWith('s') && t.length > 2) return t.slice(0, -1);
+                return t;
+            });
+
+            // 5. Process each token
+            const keywords = [];
+            const seen = new Set();
+
+            for (const token of tokens) {
+                // Skip stop words
+                if (STOP_WORDS.has(token)) continue;
+
+                // Check pronouns
+                if (PRONOUN_MAP[token]) {
+                    const kw = PRONOUN_MAP[token];
+                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
+                    continue;
+                }
+
+                // Check verbs → infinitive
+                if (VERB_INFINITIVE_MAP[token]) {
+                    const kw = VERB_INFINITIVE_MAP[token];
+                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
+                    continue;
+                }
+
+                // Check noun synonyms
+                if (NOUN_SYNONYMS[token]) {
+                    const kw = NOUN_SYNONYMS[token];
+                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
+                    continue;
+                }
+
+                // Check adjective synonyms
+                if (ADJECTIVE_SYNONYMS[token]) {
+                    const kw = ADJECTIVE_SYNONYMS[token];
+                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
+                    continue;
+                }
+
+                // Try to detect verbs by common endings
+                const infinitive = tryGetInfinitive(token);
+                if (infinitive) {
+                    if (!seen.has(infinitive)) { keywords.push(infinitive); seen.add(infinitive); }
+                    continue;
+                }
+
+                // Use the word as-is (likely a noun or important word)
+                if (token.length > 1) {
+                    if (!seen.has(token)) { keywords.push(token); seen.add(token); }
+                }
+            }
+
+            return keywords.length > 0 ? keywords : tokens.filter(t => t.length > 1);
+        }
+
+        function tryGetInfinitive(word) {
+            // Common Spanish verb conjugation patterns → infinitive
+            const patterns = [
+                { regex: /(.+)emos$/, replace: 'ar' },
+                { regex: /(.+)amos$/, replace: 'ar' },
+                { regex: /(.+)áis$/, replace: 'ar' },
+                { regex: /(.+)an$/, replace: 'ar' },
+                { regex: /(.+)as$/, replace: 'ar' },
+                { regex: /(.+)a$/, replace: 'ar' },
+                { regex: /(.+)imos$/, replace: 'ir' },
+                { regex: /(.+)ís$/, replace: 'ir' },
+                { regex: /(.+)en$/, replace: 'er' },
+                { regex: /(.+)es$/, replace: 'er' },
+                { regex: /(.+)e$/, replace: 'er' },
+                { regex: /(.+)ó$/, replace: 'ar' },
+                { regex: /(.+)é$/, replace: 'ar' },
+                { regex: /(.+)ando$/, replace: 'ar' },
+                { regex: /(.+)iendo$/, replace: 'er' },
+                { regex: /(.+)ado$/, replace: 'ar' },
+                { regex: /(.+)ido$/, replace: 'er' },
+            ];
+
+            for (const p of patterns) {
+                const match = word.match(p.regex);
+                if (match && match[1].length >= 2) {
+                    const stem = match[1];
+                    const inf1 = stem + p.replace;
+                    // Verify it's a likely verb (stem not too short)
+                    if (stem.length >= 2) return inf1;
+                }
+            }
+            return null;
+        }
+
+        return { process, PRONOUN_MAP };
+    })();
+
+    // ===== ARASAAC API MODULE =====
+    const ArasaacAPI = (() => {
+        const cache = new Map();
+
+        async function search(term) {
+            const key = term.toLowerCase().trim();
+            if (cache.has(key)) return cache.get(key);
+
+            try {
+                const url = `${CONFIG.ARASAAC_API}/${CONFIG.LANGUAGE}/search/${encodeURIComponent(key)}`;
+                const res = await fetch(url);
+                if (!res.ok) return [];
+                const data = await res.json();
+                cache.set(key, data);
+                return data;
+            } catch (err) {
+                console.warn('ARASAAC search error:', key, err);
+                return [];
+            }
+        }
+
+        function getImageUrl(id) {
+            return `${CONFIG.ARASAAC_IMG}/${id}/${id}_${CONFIG.IMG_SIZE}.png`;
+        }
+
+        async function searchBest(term) {
+            const results = await search(term);
+            if (results.length > 0) {
+                const item = results[0];
+                return {
+                    id: item._id,
+                    keyword: getBestKeyword(item, term),
+                    imageUrl: getImageUrl(item._id)
+                };
+            }
+            return null;
+        }
+
+        function getBestKeyword(item, searchTerm) {
+            if (!item.keywords || item.keywords.length === 0) return searchTerm;
+            // Try to find exact match
+            const exact = item.keywords.find(k =>
+                k.keyword.toLowerCase() === searchTerm.toLowerCase()
+            );
+            if (exact) return exact.keyword;
+            // Return first keyword
+            return item.keywords[0].keyword;
+        }
+
+        return { search, searchBest, getImageUrl };
+    })();
+
+    // ===== VOICE INPUT MODULE =====
+    const VoiceInput = (() => {
+        let recognition = null;
+        let isListening = false;
+        let callback = null;
+
+        function init() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return false;
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                if (callback) callback(transcript, event.results[0].isFinal);
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                updateUI();
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('Voice error:', event.error);
+                isListening = false;
+                updateUI();
+                if (event.error === 'not-allowed') {
+                    showToast('Permiso de micrófono denegado', 'error');
+                }
+            };
+
+            return true;
+        }
+
+        function start(cb) {
+            if (!recognition) {
+                showToast('Reconocimiento de voz no disponible', 'error');
+                return;
+            }
+            callback = cb;
+            try {
+                recognition.start();
+                isListening = true;
+                updateUI();
+            } catch (e) {
+                console.warn('Voice start error:', e);
+            }
+        }
+
+        function stop() {
+            if (recognition && isListening) {
+                recognition.stop();
+                isListening = false;
+                updateUI();
+            }
+        }
+
+        function toggle(cb) {
+            if (isListening) {
+                stop();
+            } else {
+                start(cb);
+            }
+        }
+
+        function updateUI() {
+            const btn = document.getElementById('btn-voice');
+            if (btn) {
+                btn.classList.toggle('listening', isListening);
+                btn.setAttribute('aria-label', isListening ? 'Detener dictado' : 'Dictar con voz');
+            }
+        }
+
+        function isSupported() {
+            return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+        }
+
+        return { init, start, stop, toggle, isSupported, get isListening() { return isListening; } };
+    })();
+
+    // ===== STORAGE MODULE (IndexedDB) =====
+    const Storage = (() => {
+        let db = null;
+
+        function init() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains(CONFIG.STORE_NAME)) {
+                        const store = database.createObjectStore(CONFIG.STORE_NAME, { keyPath: 'id' });
+                        store.createIndex('createdAt', 'createdAt', { unique: false });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (e) => {
+                    console.error('IndexedDB error:', e);
+                    reject(e);
+                };
+            });
+        }
+
+        function saveRoutine(routine) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject(new Error('DB not initialized')); return; }
+                const tx = db.transaction(CONFIG.STORE_NAME, 'readwrite');
+                const store = tx.objectStore(CONFIG.STORE_NAME);
+                const data = {
+                    id: routine.id || Date.now().toString(),
+                    name: routine.name,
+                    pictograms: routine.pictograms,
+                    createdAt: routine.createdAt || new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                store.put(data);
+                tx.oncomplete = () => resolve(data);
+                tx.onerror = (e) => reject(e);
+            });
+        }
+
+        function getRoutines() {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject(new Error('DB not initialized')); return; }
+                const tx = db.transaction(CONFIG.STORE_NAME, 'readonly');
+                const store = tx.objectStore(CONFIG.STORE_NAME);
+                const request = store.getAll();
+                request.onsuccess = () => {
+                    const results = request.result.sort((a, b) =>
+                        new Date(b.updatedAt) - new Date(a.updatedAt)
+                    );
+                    resolve(results);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        }
+
+        function deleteRoutine(id) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject(new Error('DB not initialized')); return; }
+                const tx = db.transaction(CONFIG.STORE_NAME, 'readwrite');
+                const store = tx.objectStore(CONFIG.STORE_NAME);
+                store.delete(id);
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+        }
+
+        return { init, saveRoutine, getRoutines, deleteRoutine };
+    })();
+
+    // ===== DRAG & DROP MODULE =====
+    const DragDrop = (() => {
+        let container = null;
+        let draggedEl = null;
+        let draggedIndex = -1;
+        let placeholder = null;
+
+        function init(el) {
+            container = el;
+            container.addEventListener('pointerdown', onPointerDown);
+            container.addEventListener('pointermove', onPointerMove);
+            container.addEventListener('pointerup', onPointerUp);
+            container.addEventListener('pointercancel', onPointerUp);
+        }
+
+        function destroy() {
+            if (!container) return;
+            container.removeEventListener('pointerdown', onPointerDown);
+            container.removeEventListener('pointermove', onPointerMove);
+            container.removeEventListener('pointerup', onPointerUp);
+            container.removeEventListener('pointercancel', onPointerUp);
+            container = null;
+        }
+
+        function onPointerDown(e) {
+            const card = e.target.closest('.picto-card');
+            if (!card || e.target.closest('.delete-btn')) return;
+
+            draggedEl = card;
+            draggedIndex = getCardIndex(card);
+            card.setPointerCapture(e.pointerId);
+            card.classList.add('dragging');
+        }
+
+        function onPointerMove(e) {
+            if (!draggedEl) return;
+            e.preventDefault();
+
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            if (!target) return;
+            const targetCard = target.closest('.picto-card');
+
+            // Remove all drag-over classes
+            container.querySelectorAll('.picto-card').forEach(c => c.classList.remove('drag-over'));
+
+            if (targetCard && targetCard !== draggedEl) {
+                targetCard.classList.add('drag-over');
+            }
+        }
+
+        function onPointerUp(e) {
+            if (!draggedEl) return;
+
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            let targetCard = null;
+            if (target) targetCard = target.closest('.picto-card');
+
+            draggedEl.classList.remove('dragging');
+            container.querySelectorAll('.picto-card').forEach(c => c.classList.remove('drag-over'));
+
+            if (targetCard && targetCard !== draggedEl) {
+                const fromIndex = draggedIndex;
+                const toIndex = getCardIndex(targetCard);
+                if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+                    App.reorderSequence(fromIndex, toIndex);
+                }
+            }
+
+            draggedEl = null;
+            draggedIndex = -1;
+        }
+
+        function getCardIndex(card) {
+            const cards = Array.from(container.querySelectorAll('.picto-card'));
+            return cards.indexOf(card);
+        }
+
+        return { init, destroy };
+    })();
+
+    // ===== UI MODULE =====
+    const UI = (() => {
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const view = document.getElementById(`view-${viewName}`);
+            if (view) view.classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === viewName);
+            });
+
+            if (viewName === 'routines') {
+                App.loadRoutines();
+            }
+        }
+
+        function renderSequence(pictograms) {
+            const container = document.getElementById('sequence');
+            const section = document.getElementById('sequence-section');
+
+            if (!pictograms || pictograms.length === 0) {
+                section.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            section.classList.remove('hidden');
+            container.innerHTML = pictograms.map((p, i) => `
+                <div class="picto-card ${p.isPlaceholder ? 'no-image' : ''}" data-index="${i}">
+                    <button class="delete-btn" data-index="${i}" aria-label="Eliminar ${p.keyword}">✕</button>
+                    <div class="picto-img-wrap">
+                        ${p.isPlaceholder
+                            ? `<span class="placeholder">📝</span>`
+                            : `<img src="${p.imageUrl}" alt="${p.keyword}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\\'placeholder\\'>📝</span>'">`
+                        }
+                    </div>
+                    <span class="picto-label">${p.keyword.toUpperCase()}</span>
+                </div>
+            `).join('');
+
+            // Attach delete handlers
+            container.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.index);
+                    App.removeFromSequence(idx);
+                });
+            });
+
+            // Re-init drag & drop
+            DragDrop.destroy();
+            DragDrop.init(container);
+        }
+
+        function renderFullscreen(pictograms) {
+            const container = document.getElementById('fullscreen-sequence');
+            const title = document.getElementById('fullscreen-title');
+
+            container.innerHTML = pictograms.map(p => `
+                <div class="fullscreen-card">
+                    <div class="fs-img-wrap">
+                        ${p.isPlaceholder
+                            ? `<span style="font-size:4rem;opacity:0.3">📝</span>`
+                            : `<img src="${p.imageUrl}" alt="${p.keyword}" onerror="this.parentElement.innerHTML='<span style=\\'font-size:4rem;opacity:0.3\\'>📝</span>'">`
+                        }
+                    </div>
+                    <span class="fs-label">${p.keyword.toUpperCase()}</span>
+                </div>
+            `).join('');
+        }
+
+        async function renderRoutines() {
+            const grid = document.getElementById('routines-grid');
+            const empty = document.getElementById('no-routines');
+
+            try {
+                const routines = await Storage.getRoutines();
+
+                if (routines.length === 0) {
+                    grid.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                empty.classList.add('hidden');
+                grid.innerHTML = routines.map(r => `
+                    <div class="routine-card" data-id="${r.id}">
+                        <div class="routine-name">${escapeHtml(r.name)}</div>
+                        <div class="routine-preview">
+                            ${r.pictograms.slice(0, 4).map(p =>
+                                p.isPlaceholder
+                                    ? `<span style="font-size:1.5rem;opacity:0.3">📝</span>`
+                                    : `<img src="${p.imageUrl}" alt="${p.keyword}" loading="lazy">`
+                            ).join('')}
+                            ${r.pictograms.length > 4 ? `<span style="font-size:0.8rem;color:var(--text-light);font-weight:600">+${r.pictograms.length - 4}</span>` : ''}
+                        </div>
+                        <div class="routine-date">${formatDate(r.updatedAt)}</div>
+                        <div class="routine-actions">
+                            <button class="routine-action-btn routine-open-btn" data-id="${r.id}">Abrir</button>
+                            <button class="routine-action-btn delete routine-delete-btn" data-id="${r.id}">Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Attach event listeners
+                grid.querySelectorAll('.routine-open-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        App.loadRoutine(btn.dataset.id);
+                    });
+                });
+
+                grid.querySelectorAll('.routine-delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        App.deleteRoutine(btn.dataset.id);
+                    });
+                });
+            } catch (err) {
+                console.error('Error rendering routines:', err);
+                empty.classList.remove('hidden');
+            }
+        }
+
+        function renderSearchResults(results) {
+            const container = document.getElementById('search-results');
+            const noResults = document.getElementById('no-results');
+
+            if (!results || results.length === 0) {
+                container.innerHTML = '';
+                noResults.querySelector('p').textContent = 'No se encontraron pictogramas.';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            container.innerHTML = results.map(item => {
+                const keyword = item.keywords && item.keywords.length > 0
+                    ? item.keywords[0].keyword
+                    : 'Sin nombre';
+                return `
+                    <div class="search-result-card" data-id="${item._id}" data-keyword="${escapeHtml(keyword)}">
+                        <img src="${ArasaacAPI.getImageUrl(item._id)}" alt="${escapeHtml(keyword)}" loading="lazy">
+                        <span class="label">${escapeHtml(keyword)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Attach click handlers
+            container.querySelectorAll('.search-result-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const id = parseInt(card.dataset.id);
+                    const keyword = card.dataset.keyword;
+                    App.addToSequence({
+                        id: id,
+                        keyword: keyword,
+                        imageUrl: ArasaacAPI.getImageUrl(id)
+                    });
+                    card.classList.add('added');
+                    setTimeout(() => card.classList.remove('added'), 800);
+                    showToast(`"${keyword}" añadido`, 'success');
+                });
+            });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+        }
+
+        function clearSearchResults() {
+            document.getElementById('search-results').innerHTML = '';
+            document.getElementById('no-results').querySelector('p').textContent = 'Busca palabras para encontrar pictogramas.';
+            document.getElementById('no-results').classList.remove('hidden');
+        }
+
+        return { showView, renderSequence, renderFullscreen, renderRoutines, renderSearchResults, showLoading, clearSearchResults };
+    })();
+
+    // ===== MAIN APP =====
+    const App = (() => {
+        let currentSequence = [];
+        let currentView = 'home';
+        let searchTimeout = null;
+
+        async function init() {
+            // Init storage
+            try {
+                await Storage.init();
+            } catch (e) {
+                console.warn('Storage init failed:', e);
+            }
+
+            // Init voice
+            if (VoiceInput.init()) {
+                document.getElementById('btn-voice').style.display = '';
+            } else {
+                document.getElementById('btn-voice').style.display = 'none';
+            }
+
+            // Render quick phrases
+            renderQuickPhrases();
+
+            // Bind events
+            bindEvents();
+
+            // Init PWA
+            initPWA();
+
+            // Show home view
+            UI.showView('home');
+        }
+
+        function renderQuickPhrases() {
+            const phrases = [
+                'Buenos días', 'Hola', 'Adiós', 'Por favor', 'Gracias',
+                'Tengo hambre', 'Tengo sed', 'Quiero comer', 'Quiero beber',
+                'Necesito ir al baño', 'Quiero jugar', 'Quiero dormir',
+                'Estoy feliz', 'Estoy triste', 'Me siento bien',
+                'Vamos al parque', 'Quiero ir a casa', 'Ayuda'
+            ];
+
+            const container = document.getElementById('phrases-scroll');
+            container.innerHTML = phrases.map(p =>
+                `<button class="phrase-chip" data-phrase="${escapeHtml(p)}">${p}</button>`
+            ).join('');
+
+            container.addEventListener('click', (e) => {
+                const chip = e.target.closest('.phrase-chip');
+                if (!chip) return;
+                const phrase = chip.dataset.phrase;
+                document.getElementById('text-input').value = phrase;
+                generateFromText(phrase);
+            });
+        }
+
+        function bindEvents() {
+            // Generate button
+            document.getElementById('btn-generate').addEventListener('click', () => {
+                const text = document.getElementById('text-input').value.trim();
+                if (text) generateFromText(text);
+                else showToast('Escribe o dicta una frase primero', 'error');
+            });
+
+            // Text input — Enter key
+            document.getElementById('text-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('btn-generate').click();
+                }
+            });
+
+            // Voice button
+            document.getElementById('btn-voice').addEventListener('click', () => {
+                VoiceInput.toggle((transcript, isFinal) => {
+                    document.getElementById('text-input').value = transcript;
+                    if (isFinal && transcript.trim()) {
+                        setTimeout(() => generateFromText(transcript), 300);
+                    }
+                });
+            });
+
+            // Navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const view = btn.dataset.view;
+                    currentView = view;
+                    UI.showView(view);
+                });
+            });
+
+            // Fullscreen
+            document.getElementById('btn-fullscreen').addEventListener('click', openFullscreen);
+            document.getElementById('btn-close-fullscreen').addEventListener('click', closeFullscreen);
+            document.getElementById('fullscreen-modal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeFullscreen();
+            });
+
+            // Save
+            document.getElementById('btn-save').addEventListener('click', openSaveDialog);
+            document.getElementById('btn-cancel-save').addEventListener('click', closeSaveDialog);
+            document.getElementById('btn-confirm-save').addEventListener('click', confirmSave);
+            document.getElementById('save-dialog').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeSaveDialog();
+            });
+
+            // Clear
+            document.getElementById('btn-clear').addEventListener('click', () => {
+                currentSequence = [];
+                UI.renderSequence([]);
+                showToast('Secuencia eliminada');
+            });
+
+            // Search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                if (query.length < 2) {
+                    UI.clearSearchResults();
+                    return;
+                }
+                searchTimeout = setTimeout(() => searchPictograms(query), CONFIG.DEBOUNCE_MS);
+            });
+
+            // Quick Search
+            document.getElementById('quick-search-input').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                if (query.length < 2) {
+                    document.getElementById('quick-search-results').innerHTML = '';
+                    return;
+                }
+                searchTimeout = setTimeout(() => quickSearchPictograms(query), CONFIG.DEBOUNCE_MS);
+            });
+
+            // Keyboard shortcut: Escape to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeFullscreen();
+                    closeSaveDialog();
+                }
+            });
+        }
+
+        async function generateFromText(text) {
+            UI.showLoading(true);
+
+            try {
+                // 1. NLP processing
+                const keywords = SpanishNLP.process(text);
+
+                if (keywords.length === 0) {
+                    showToast('No se pudieron extraer palabras clave', 'error');
+                    UI.showLoading(false);
+                    return;
+                }
+
+                // 2. Search ARASAAC for each keyword
+                const pictograms = [];
+                const promises = keywords.map(async (kw) => {
+                    const result = await ArasaacAPI.searchBest(kw);
+                    if (result) {
+                        return result;
+                    } else {
+                        // Try alternate forms
+                        // Try without accents
+                        const noAccent = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        if (noAccent !== kw) {
+                            const alt = await ArasaacAPI.searchBest(noAccent);
+                            if (alt) return alt;
+                        }
+                        // Return placeholder
+                        return {
+                            id: null,
+                            keyword: kw,
+                            imageUrl: null,
+                            isPlaceholder: true
+                        };
+                    }
+                });
+
+                const results = await Promise.all(promises);
+                currentSequence = results;
+
+                // 3. Render
+                UI.renderSequence(currentSequence);
+                UI.showLoading(false);
+
+                // Scroll to sequence
+                document.getElementById('sequence-section').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+
+                showToast(`${currentSequence.length} pictogramas generados`, 'success');
+
+            } catch (err) {
+                console.error('Generation error:', err);
+                UI.showLoading(false);
+                showToast('Error al generar pictogramas', 'error');
+            }
+        }
+
+        async function searchPictograms(query) {
+            try {
+                const results = await ArasaacAPI.search(query);
+                UI.renderSearchResults(results.slice(0, 30));
+            } catch (err) {
+                console.error('Search error:', err);
+                showToast('Error en la búsqueda', 'error');
+            }
+        }
+
+        async function quickSearchPictograms(query) {
+            try {
+                const results = await ArasaacAPI.search(query);
+                renderQuickSearchResults(results.slice(0, 12));
+            } catch (err) {
+                console.error('Quick search error:', err);
+                showToast('Error en la búsqueda', 'error');
+            }
+        }
+
+        function renderQuickSearchResults(results) {
+            const container = document.getElementById('quick-search-results');
+            if (!results || results.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = results.map(item => {
+                const keyword = item.keywords && item.keywords.length > 0
+                    ? item.keywords[0].keyword
+                    : 'Sin nombre';
+                return `
+                    <div class="quick-search-result-card" data-id="${item._id}" data-keyword="${escapeHtml(keyword)}" draggable="true">
+                        <img src="${ArasaacAPI.getImageUrl(item._id)}" alt="${escapeHtml(keyword)}" loading="lazy">
+                        <span class="label">${escapeHtml(keyword)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Attach drag handlers
+            container.querySelectorAll('.quick-search-result-card').forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    const id = parseInt(card.dataset.id);
+                    const keyword = card.dataset.keyword;
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                        id: id,
+                        keyword: keyword,
+                        imageUrl: ArasaacAPI.getImageUrl(id),
+                        source: 'quick-search'
+                    }));
+                });
+
+                // Also allow click to add
+                card.addEventListener('click', () => {
+                    const id = parseInt(card.dataset.id);
+                    const keyword = card.dataset.keyword;
+                    App.addToSequence({
+                        id: id,
+                        keyword: keyword,
+                        imageUrl: ArasaacAPI.getImageUrl(id)
+                    });
+                    showToast(`"${keyword}" añadido`, 'success');
+                    setTimeout(() => {
+                        document.getElementById('quick-search-input').value = '';
+                        document.getElementById('quick-search-results').innerHTML = '';
+                    }, 500);
+                });
+            });
+        }
+
+        function addToSequence(pictogram) {
+            currentSequence.push(pictogram);
+            UI.renderSequence(currentSequence);
+        }
+
+        function removeFromSequence(index) {
+            currentSequence.splice(index, 1);
+            UI.renderSequence(currentSequence);
+        }
+
+        function reorderSequence(fromIndex, toIndex) {
+            const item = currentSequence.splice(fromIndex, 1)[0];
+            currentSequence.splice(toIndex, 0, item);
+            UI.renderSequence(currentSequence);
+        }
+
+        function openFullscreen() {
+            if (currentSequence.length === 0) return;
+            UI.renderFullscreen(currentSequence);
+            document.getElementById('fullscreen-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFullscreen() {
+            document.getElementById('fullscreen-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function openSaveDialog() {
+            if (currentSequence.length === 0) {
+                showToast('No hay pictogramas para guardar', 'error');
+                return;
+            }
+            document.getElementById('routine-name-input').value = '';
+            document.getElementById('save-dialog').classList.add('active');
+            setTimeout(() => document.getElementById('routine-name-input').focus(), 100);
+        }
+
+        function closeSaveDialog() {
+            document.getElementById('save-dialog').classList.remove('active');
+        }
+
+        async function confirmSave() {
+            const name = document.getElementById('routine-name-input').value.trim();
+            if (!name) {
+                showToast('Ingresa un nombre para la rutina', 'error');
+                return;
+            }
+
+            try {
+                await Storage.saveRoutine({
+                    name: name,
+                    pictograms: [...currentSequence],
+                    createdAt: new Date().toISOString()
+                });
+                closeSaveDialog();
+                showToast('Rutina guardada correctamente', 'success');
+            } catch (err) {
+                console.error('Save error:', err);
+                showToast('Error al guardar la rutina', 'error');
+            }
+        }
+
+        async function loadRoutines() {
+            await UI.renderRoutines();
+        }
+
+        async function loadRoutine(id) {
+            try {
+                const routines = await Storage.getRoutines();
+                const routine = routines.find(r => r.id === id);
+                if (routine) {
+                    currentSequence = [...routine.pictograms];
+                    UI.renderSequence(currentSequence);
+                    UI.showView('home');
+                    currentView = 'home';
+                    showToast(`Rutina "${routine.name}" cargada`, 'success');
+                }
+            } catch (err) {
+                console.error('Load routine error:', err);
+                showToast('Error al cargar la rutina', 'error');
+            }
+        }
+
+        async function deleteRoutine(id) {
+            if (!confirm('¿Eliminar esta rutina?')) return;
+            try {
+                await Storage.deleteRoutine(id);
+                await UI.renderRoutines();
+                showToast('Rutina eliminada');
+            } catch (err) {
+                console.error('Delete error:', err);
+                showToast('Error al eliminar', 'error');
+            }
+        }
+
+        function initPWA() {
+            // Create manifest blob
+            const manifest = {
+                name: 'PictoCom — Comunicación Visual TEA',
+                short_name: 'PictoCom',
+                description: 'Sistema de comunicación visual mediante pictogramas para personas con TEA',
+                start_url: '.',
+                display: 'standalone',
+                background_color: '#F7F3EE',
+                theme_color: '#5BA4B5',
+                orientation: 'any',
+                icons: [
+                    {
+                        src: 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%235BA4B5"/><text x="50" y="68" text-anchor="middle" font-size="55">🧩</text></svg>'),
+                        sizes: 'any',
+                        type: 'image/svg+xml',
+                        purpose: 'any'
+                    }
+                ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            document.getElementById('manifest-link').href = manifestUrl;
+
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'pictocom-v1';
+                    const PRECACHE = ['/'];
+
+                    self.addEventListener('install', (e) => {
+                        e.waitUntil(
+                            caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE))
+                        );
+                        self.skipWaiting();
+                    });
+
+                    self.addEventListener('activate', (e) => {
+                        e.waitUntil(
+                            caches.keys().then(keys =>
+                                Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+                            )
+                        );
+                        self.clients.claim();
+                    });
+
+                    self.addEventListener('fetch', (e) => {
+                        const url = new URL(e.request.url);
+
+                        // Cache ARASAAC images
+                        if (url.hostname === 'static.arasaac.org') {
+                            e.respondWith(
+                                caches.match(e.request).then(cached => {
+                                    if (cached) return cached;
+                                    return fetch(e.request).then(response => {
+                                        const clone = response.clone();
+                                        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+                                        return response;
+                                    }).catch(() => new Response('', { status: 404 }));
+                                })
+                            );
+                            return;
+                        }
+
+                        // Network first for API calls
+                        if (url.hostname === 'api.arasaac.org') {
+                            e.respondWith(
+                                fetch(e.request).then(response => {
+                                    const clone = response.clone();
+                                    caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+                                    return response;
+                                }).catch(() => caches.match(e.request))
+                            );
+                            return;
+                        }
+
+                        // Cache first for app shell
+                        e.respondWith(
+                            caches.match(e.request).then(cached => cached || fetch(e.request))
+                        );
+                    });
+                `;
+
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+
+                navigator.serviceWorker.register(swUrl).catch(err => {
+                    console.warn('SW registration failed:', err);
+                });
+            }
+        }
+
+        return {
+            init, generateFromText, addToSequence, removeFromSequence,
+            reorderSequence, loadRoutines, loadRoutine, deleteRoutine
+        };
+    })();
+
+    // ===== UTILITIES =====
+    function showToast(message, type = '') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function formatDate(isoString) {
+        try {
+            const d = new Date(isoString);
+            return d.toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch {
+            return '';
+        }
+    }
+
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>

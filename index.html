@@ -1249,6 +1249,9 @@
        ================================================================ */
 
     // ===== CONFIGURATION =====
+    // API key GRATUITA: https://aistudio.google.com/app/apikey
+    const GEMINI_API_KEY = 'AIzaSyA5Qdy5uk9tTX3kg2L-li40NCF63vSaNvo'; // REEMPLAZA CON TU API KEY
+    
     const CONFIG = {
         ARASAAC_API: 'https://api.arasaac.org/api/pictograms',
         ARASAAC_IMG: 'https://static.arasaac.org/pictograms',
@@ -1258,325 +1261,231 @@
         DB_NAME: 'PictoComDB',
         DB_VERSION: 1,
         STORE_NAME: 'routines',
-        DEBOUNCE_MS: 400
+        DEBOUNCE_MS: 400,
+        GEMINI_API: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+        USE_AI: GEMINI_API_KEY !== 'AIzaSyA5Qdy5uk9tTX3kg2L-li40NCF63vSaNvo'
     };
 
-    // ===== SPANISH NLP MODULE =====
-    const SpanishNLP = (() => {
+    // ===== GEMINI AI MODULE (Context-aware Analysis) =====
+    const GeminiAI = (() => {
+        // Stop words en español - expandido
         const STOP_WORDS = new Set([
-            'el','la','los','las','un','una','unos','unas','de','del','al',
-            'en','a','por','con','para','sin','sobre','entre','hasta','desde',
-            'y','e','o','u','ni','pero','sino','que','como','cual','cuales',
-            'es','son','está','están','fue','ser','haber','hay','tiene','tengo',
-            'se','su','sus','mi','mis','tu','tus','nuestro','nuestra','me','te',
-            'nos','os','le','les','lo','muy','más','menos','tan','también',
-            'ya','no','sí','si','bien','así','aquí','ahí','allí','entonces',
-            'cuando','donde','porque','aunque','mientras','después','antes',
-            'ahora','siempre','nunca','algo','nada','todo','cada','otro','otra',
-            'esto','eso','esta','ese','esa','estos','esas','esos','estas',
-            'hay','he','ha','han','hemos','has','vais','van',
-            'del','eso','ella','él','ellos','ellas','nosotros','nosotras',
-            'vosotros','vosotras','usted','ustedes'
+            'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 
+            'de', 'del', 'en', 'a', 'al', 'ante', 'con', 'por', 'para', 'y', 'o', 'e',
+            'que', 'cual', 'cuales', 'se', 'es', 'son', 'está', 'están', 'estoy', 'estás',
+            'fue', 'fueron', 'ser', 'haber', 'hay', 'tiene', 'tengo', 'tienen', 'tenemos',
+            'muy', 'más', 'menos', 'tan', 'también', 'ya', 'no', 'sí', 'si', 'luego',
+            'cuando', 'donde', 'porque', 'aunque', 'mientras', 'después', 'antes',
+            'ahora', 'siempre', 'nunca', 'algo', 'nada', 'todo', 'cada', 'otro', 'otra',
+            'esto', 'eso', 'esta', 'ese', 'esa', 'estos', 'esas', 'esos', 'estas',
+            'he', 'ha', 'han', 'hemos', 'has', 'vais', 'van', 'eres', 'sois', 'soy',
+            'el', 'mi', 'mis', 'tu', 'tus', 'su', 'sus', 'nuestro', 'nuestra', 'vuestro',
+            'así', 'allí', 'aquí', 'acá', 'allá', 'aquello', 'aquella', 'aquellos', 'aquellas'
         ]);
 
-        const PRONOUN_MAP = {
-            'yo': 'YO', 'yó': 'YO', 'mi': 'MI', 'mío': 'MI', 'mía': 'MI', 'míos': 'MI', 'mías': 'MI',
-            'tú': 'TÚ', 'tu': 'TÚ', 'vos': 'TÚ', 'te': 'TÚ', 'ti': 'TÚ', 'tuyo': 'TÚ', 'tuya': 'TÚ',
-            'él': 'ÉL', 'lo': 'ÉL', 'le': 'ÉL',
-            'ella': 'ELLA', 'la': 'ELLA',
-            'usted': 'USTED', 'ud': 'USTED', 'ustedes': 'USTEDES',
-            'nosotros': 'NOSOTROS', 'nosotras': 'NOSOTROS', 'nos': 'NOSOTROS', 'nuestro': 'NOSOTROS', 'nuestra': 'NOSOTROS',
-            'vosotros': 'VOSOTROS', 'vosotras': 'VOSOTROS', 'os': 'VOSOTROS', 'vuestro': 'VOSOTROS',
-            'ellos': 'ELLOS', 'los': 'ELLOS', 'les': 'ELLOS',
-            'ellas': 'ELLAS', 'las': 'ELLAS'
+        // Mapeo de formas conjugadas a infinitivo o forma buscable
+        const VERB_TO_INFINITIVE = {
+            // IR
+            'vamos': 'ir', 'van': 'ir', 'vaya': 'ir', 'vayan': 'ir', 'voy': 'ir', 'va': 'ir', 'iba': 'ir', 'ibas': 'ir', 'iban': 'ir',
+            // JUGAR
+            'jugamos': 'jugar', 'juegan': 'jugar', 'juega': 'jugar', 'juego': 'jugar', 'jugaba': 'jugar', 'jugo': 'jugar',
+            // REGRESAR
+            'regresamos': 'regresar', 'regresan': 'regresar', 'regresa': 'regresar', 'regreso': 'regresar', 'regresaba': 'regresar',
+            // COMPRAR
+            'compramos': 'comprar', 'compran': 'comprar', 'compra': 'comprar', 'compro': 'comprar', 'compraba': 'comprar',
+            // INGRESAR
+            'ingresamos': 'ingresar', 'ingresan': 'ingresar', 'ingresa': 'ingresar', 'ingreso': 'ingresar', 'ingresaba': 'ingresar',
+            // VER
+            'vemos': 'ver', 'ven': 'ver', 've': 'ver', 'vea': 'ver', 'veamos': 'ver', 'veia': 'ver',
+            // DIVERTIR
+            'divertimos': 'divertir', 'divierten': 'divertir', 'divierte': 'divertir', 'divierto': 'divertir', 'divertia': 'divertir',
+            // MIRAR
+            'miramos': 'mirar', 'miran': 'mirar', 'mira': 'mirar', 'miro': 'mirar', 'miraba': 'mirar', 'mirando': 'mirar',
+            // COMER
+            'comemos': 'comer', 'comen': 'comer', 'come': 'comer', 'como': 'comer', 'comia': 'comer', 'comiendo': 'comer',
+            // BEBER
+            'bebemos': 'beber', 'beben': 'beber', 'bebe': 'beber', 'bebo': 'beber', 'bebia': 'beber', 'bebiendo': 'beber',
+            // DORMIR
+            'dormimos': 'dormir', 'duermen': 'dormir', 'duerme': 'dormir', 'duermo': 'dormir', 'dormia': 'dormir', 'durmiendo': 'dormir',
+            // CORRER
+            'corremos': 'correr', 'corren': 'correr', 'corre': 'correr', 'corro': 'correr', 'corria': 'correr', 'corriendo': 'correr',
+            // CAMINAR
+            'caminamos': 'caminar', 'caminan': 'caminar', 'camina': 'caminar', 'camino': 'caminar', 'caminaba': 'caminar', 'caminando': 'caminar',
+            // ESTAR
+            'estamos': 'estar', 'estan': 'estar', 'estoy': 'estar', 'estas': 'estar', 'estaba': 'estar', 'estando': 'estar',
+            // SALTAR
+            'saltamos': 'saltar', 'saltan': 'saltar', 'salta': 'saltar', 'salto': 'saltar', 'saltaba': 'saltar', 'saltando': 'saltar',
+            // CANTAR
+            'cantamos': 'cantar', 'cantan': 'cantar', 'canta': 'cantar', 'canto': 'cantar', 'cantaba': 'cantar', 'cantando': 'cantar',
+            // BAILAR
+            'bailamos': 'bailar', 'bailan': 'bailar', 'baila': 'bailar', 'bailo': 'bailar', 'bailaba': 'bailar', 'bailando': 'bailar',
+            // NADAR
+            'nadamos': 'nadar', 'nadan': 'nadar', 'nada': 'nadar', 'nado': 'nadar', 'nadaba': 'nadar', 'nadando': 'nadar',
+            // DIBUJAR
+            'dibujamos': 'dibujar', 'dibujan': 'dibujar', 'dibuja': 'dibujar', 'dibujo': 'dibujar', 'dibujaba': 'dibujar', 'dibujando': 'dibujar',
+            // ESCRIBIR
+            'escribimos': 'escribir', 'escriben': 'escribir', 'escribe': 'escribir', 'escribo': 'escribir', 'escribia': 'escribir', 'escribiendo': 'escribir',
+            // LEER
+            'leemos': 'leer', 'leen': 'leer', 'lee': 'leer', 'leo': 'leer', 'leia': 'leer', 'leyendo': 'leer',
+            // HABLAR
+            'hablamos': 'hablar', 'hablan': 'hablar', 'habla': 'hablar', 'hablo': 'hablar', 'hablaba': 'hablar', 'hablando': 'hablar',
+            // ESCUCHAR
+            'escuchamos': 'escuchar', 'escuchan': 'escuchar', 'escucha': 'escuchar', 'escucho': 'escuchar', 'escuchaba': 'escuchar', 'escuchando': 'escuchar',
+            // TOMAR
+            'tomamos': 'tomar', 'toman': 'tomar', 'toma': 'tomar', 'tomo': 'tomar', 'tomaba': 'tomar', 'tomando': 'tomar',
+            // SUBIR
+            'subimos': 'subir', 'suben': 'subir', 'sube': 'subir', 'subo': 'subir', 'subia': 'subir', 'subiendo': 'subir',
+            // BAJAR
+            'bajamos': 'bajar', 'bajan': 'bajar', 'baja': 'bajar', 'bajo': 'bajar', 'bajaba': 'bajar', 'bajando': 'bajar',
+            // ABRIR
+            'abrimos': 'abrir', 'abren': 'abrir', 'abre': 'abrir', 'abro': 'abrir', 'abria': 'abrir', 'abriendo': 'abrir',
+            // CERRAR
+            'cerramos': 'cerrar', 'cierran': 'cerrar', 'cierra': 'cerrar', 'cierro': 'cerrar', 'cerraba': 'cerrar', 'cerrando': 'cerrar'
         };
 
-        const VERB_INFINITIVE_MAP = {
-            'quiero': 'querer', 'quiere': 'querer', 'quieren': 'querer', 'queremos': 'querer', 'querías': 'querer',
-            'necesito': 'necesitar', 'necesita': 'necesitar', 'necesitan': 'necesitar', 'necesitamos': 'necesitar',
-            'voy': 'ir', 'va': 'ir', 'vamos': 'ir', 'van': 'ir', 'vas': 'ir', 'fui': 'ir', 'fue': 'ir', 'fueron': 'ir',
-            'como': 'comer', 'come': 'comer', 'comen': 'comer', 'comemos': 'comer', 'comía': 'comer', 'comiste': 'comer',
-            'bebo': 'beber', 'bebe': 'beber', 'beben': 'beber', 'bebemos': 'beber', 'bebía': 'beber',
-            'juego': 'jugar', 'juega': 'jugar', 'jugamos': 'jugar', 'juegan': 'jugar', 'jugaba': 'jugar', 'jugó': 'jugar',
-            'duermo': 'dormir', 'duerme': 'dormir', 'dormimos': 'dormir', 'duermen': 'dormir', 'dormía': 'dormir',
-            'corro': 'correr', 'corre': 'correr', 'corremos': 'correr', 'corren': 'correr', 'corría': 'correr',
-            'camino': 'caminar', 'camina': 'caminar', 'caminamos': 'caminar', 'caminan': 'caminar', 'caminaba': 'caminar',
-            'veo': 'ver', 've': 'ver', 'ven': 'ver', 'vemos': 'ver', 'veía': 'ver', 'viste': 'ver',
-            'escucho': 'escuchar', 'escucha': 'escuchar', 'escuchamos': 'escuchar', 'escuchaba': 'escuchar',
-            'leo': 'leer', 'lee': 'leer', 'leemos': 'leer', 'leen': 'leer', 'leía': 'leer',
-            'escribo': 'escribir', 'escribe': 'escribir', 'escribimos': 'escribir', 'escriben': 'escribir', 'escribía': 'escribir',
-            'digo': 'decir', 'dice': 'decir', 'dicen': 'decir', 'decimos': 'decir', 'decía': 'decir',
-            'hago': 'hacer', 'hace': 'hacer', 'hacen': 'hacer', 'hacemos': 'hacer', 'hacía': 'hacer', 'hizo': 'hacer',
-            'tengo': 'tener', 'tiene': 'tener', 'tienen': 'tener', 'tenemos': 'tener', 'tenía': 'tener', 'tuvo': 'tener',
-            'soy': 'ser', 'eres': 'ser', 'somos': 'ser', 'son': 'ser', 'era': 'ser', 'eras': 'ser', 'éramos': 'ser',
-            'estoy': 'estar', 'estás': 'estar', 'estamos': 'estar', 'están': 'estar', 'estaba': 'estar', 'estaban': 'estar',
-            'puedo': 'poder', 'puede': 'poder', 'podemos': 'poder', 'pueden': 'poder', 'podía': 'poder', 'podían': 'poder',
-            'sé': 'saber', 'sabe': 'saber', 'sabemos': 'saber', 'saben': 'saber', 'sabía': 'saber',
-            'doy': 'dar', 'da': 'dar', 'damos': 'dar', 'dan': 'dar', 'daba': 'dar',
-            'vengo': 'venir', 'viene': 'venir', 'venimos': 'venir', 'vienen': 'venir', 'venía': 'venir',
-            'salgo': 'salir', 'sale': 'salir', 'salimos': 'salir', 'salen': 'salir', 'salía': 'salir',
-            'pongo': 'poner', 'pone': 'poner', 'ponemos': 'poner', 'ponen': 'poner', 'ponía': 'poner',
-            'pienso': 'pensar', 'piensa': 'pensar', 'pensamos': 'pensar', 'piensan': 'pensar', 'pensaba': 'pensar',
-            'siento': 'sentir', 'siente': 'sentir', 'sentimos': 'sentir', 'sienten': 'sentir', 'sentía': 'sentir',
-            'amo': 'amar', 'ama': 'amar', 'amamos': 'amar', 'aman': 'amar', 'amaba': 'amar',
-            'trabajo': 'trabajar', 'trabaja': 'trabajar', 'trabajamos': 'trabajar', 'trabajaba': 'trabajar',
-            'estudio': 'estudiar', 'estudia': 'estudiar', 'estudiamos': 'estudiar', 'estudiaba': 'estudiar',
-            'cocino': 'cocinar', 'cocina': 'cocinar', 'cocinamos': 'cocinar', 'cocinaba': 'cocinar',
-            'limpio': 'limpiar', 'limpia': 'limpiar', 'limpiamos': 'limpiar', 'limpiaba': 'limpiar',
-            'baño': 'bañar', 'baña': 'bañar', 'bañamos': 'bañar', 'bañaba': 'bañar',
-            'lavo': 'lavar', 'lava': 'lavar', 'lavamos': 'lavar', 'lavaba': 'lavar',
-            'visto': 'vestir', 'viste': 'vestir', 'vestimos': 'vestir', 'vestía': 'vestir',
-            'ayudo': 'ayudar', 'ayuda': 'ayudar', 'ayudamos': 'ayudar', 'ayudaba': 'ayudar',
-            'pido': 'pedir', 'pide': 'pedir', 'pedimos': 'pedir', 'piden': 'pedir', 'pedía': 'pedir',
-            'miro': 'mirar', 'mira': 'mirar', 'miramos': 'mirar', 'miraban': 'mirar',
-            'tomo': 'tomar', 'toma': 'tomar', 'tomamos': 'tomar', 'tomaba': 'tomar',
-            'subo': 'subir', 'sube': 'subir', 'subimos': 'subir', 'subía': 'subir',
-            'bajo': 'bajar', 'baja': 'bajar', 'bajamos': 'bajar', 'bajaba': 'bajar',
-            'juré': 'jurar', 'juro': 'jurar', 'jura': 'jurar',
-            'nado': 'nadar', 'nada': 'nadar', 'nadaba': 'nadar',
-            'canto': 'cantar', 'canta': 'cantar', 'cantaba': 'cantar',
-            'bailo': 'bailar', 'baila': 'bailar', 'bailaba': 'bailar',
-            'salto': 'saltar', 'salta': 'saltar', 'saltaba': 'saltar'
+        const FALLBACK_MAP = {
+            'tengo hambre': ['hambre'], 'tengo sed': ['sed'], 'tengo frío': ['frío'],
+            'tengo calor': ['calor'], 'quiero comer': ['comer'], 'quiero beber': ['beber'],
+            'quiero dormir': ['dormir'], 'hola': ['hola'], 'adiós': ['adiós'],
+            'gracias': ['gracias'], 'por favor': ['favor'], 'ayuda': ['ayuda']
         };
 
-        const ADJECTIVE_SYNONYMS = {
-            'feliz': 'contento', 'alegre': 'contento', 'contento': 'contento', 'happy': 'contento',
-            'triste': 'triste', 'sad': 'triste', 'pena': 'triste',
-            'enojado': 'enfadado', 'molesto': 'enfadado', 'furioso': 'enfadado', 'angry': 'enfadado', 'enfadado': 'enfadado',
-            'cansado': 'cansado', 'tired': 'cansado', 'agotado': 'cansado',
-            'enfermo': 'enfermo', 'sick': 'enfermo', 'malo': 'enfermo',
-            'bien': 'bien', 'bueno': 'bien', 'okay': 'bien',
-            'mal': 'mal', 'malo': 'mal', 'bad': 'mal',
-            'grande': 'grande', 'big': 'grande', 'enorme': 'grande',
-            'pequeño': 'pequeño', 'small': 'pequeño', 'diminuto': 'pequeño', 'tiny': 'pequeño',
-            'nuevo': 'nuevo', 'new': 'nuevo',
-            'viejo': 'viejo', 'old': 'viejo', 'antiguo': 'viejo',
-            'bonito': 'bonito', 'pretty': 'bonito', 'hermoso': 'bonito', 'lindo': 'bonito',
-            'feo': 'feo', 'ugly': 'feo',
-            'rápido': 'rápido', 'fast': 'rápido', 'velocidad': 'rápido',
-            'lento': 'lento', 'slow': 'lento',
-            'caliente': 'caliente', 'hot': 'caliente',
-            'frío': 'frío', 'cold': 'frío',
-            'sucio': 'sucio', 'dirty': 'sucio',
-            'limpio': 'limpio', 'clean': 'limpio',
-            'mojado': 'mojado', 'wet': 'mojado',
-            'seco': 'seco', 'dry': 'seco',
-            'lleno': 'lleno', 'full': 'lleno',
-            'vacío': 'vacío', 'empty': 'vacío',
-            'fácil': 'fácil', 'easy': 'fácil',
-            'difícil': 'difícil', 'hard': 'difícil',
-            'corto': 'corto', 'short': 'corto',
-            'largo': 'largo', 'long': 'largo',
-            'alto': 'alto', 'tall': 'alto',
-            'bajo': 'bajo', 'short': 'bajo',
-            'fuerte': 'fuerte', 'strong': 'fuerte',
-            'débil': 'débil', 'weak': 'débil',
-            'valiente': 'valiente', 'brave': 'valiente',
-            'miedoso': 'miedoso', 'scared': 'miedoso',
-            'amable': 'amable', 'kind': 'amable',
-            'malo': 'malo', 'mean': 'malo'
-        };
-
-        const NOUN_SYNONYMS = {
-            'casa': 'casa', 'hogar': 'casa',
-            'escuela': 'escuela', 'colegio': 'escuela',
-            'comida': 'comida', 'almuerzo': 'comida', 'cena': 'comida', 'desayuno': 'comida', 'snack': 'comida',
-            'agua': 'agua', 'leche': 'leche', 'jugo': 'jugo', 'zumo': 'jugo', 'refresco': 'bebida',
-            'manzana': 'manzana', 'plátano': 'plátano', 'banana': 'plátano', 'naranja': 'naranja', 'fresa': 'fresa', 'fruta': 'fruta',
-            'pelota': 'pelota', 'balón': 'pelota', 'juguete': 'juguete', 'muñeca': 'muñeca', 'coche': 'coche',
-            'parque': 'parque', 'jardín': 'jardín', 'patio': 'patio', 'plaza': 'plaza',
-            'baño': 'baño', 'wc': 'baño', 'inodoro': 'baño', 'lavabo': 'lavabo',
-            'cama': 'cama', 'dormitorio': 'dormitorio', 'cuarto': 'dormitorio', 'habitación': 'dormitorio',
-            'mamá': 'madre', 'mama': 'madre', 'madre': 'madre', 'mami': 'madre',
-            'papá': 'padre', 'papa': 'padre', 'padre': 'padre', 'papi': 'padre',
-            'profesor': 'profesor', 'maestro': 'profesor', 'profe': 'profesor', 'maestra': 'profesor',
-            'doctor': 'doctor', 'médico': 'doctor', 'enfermera': 'enfermera', 'dentista': 'dentista',
-            'amigo': 'amigo', 'amiga': 'amigo', 'compañero': 'amigo', 'hermano': 'hermano', 'hermana': 'hermana',
-            'perro': 'perro', 'gato': 'gato', 'mascota': 'mascota', 'pájaro': 'pájaro', 'pez': 'pez',
-            'libro': 'libro', 'cuaderno': 'cuaderno', 'papel': 'papel', 'lápiz': 'lápiz', 'pluma': 'pluma',
-            'zapato': 'zapato', 'zapatos': 'zapato', 'tenis': 'zapato',
-            'camisa': 'camisa', 'pantalón': 'pantalón', 'pantalones': 'pantalón', 'falda': 'falda', 'vestido': 'vestido', 'abrigo': 'abrigo',
-            'sombrero': 'sombrero', 'gorra': 'gorra', 'bufanda': 'bufanda', 'guante': 'guante',
-            'sol': 'sol', 'luna': 'luna', 'lluvia': 'lluvia', 'nieve': 'nieve', 'nubes': 'nubes', 'clima': 'clima',
-            'auto': 'coche', 'carro': 'coche', 'coche': 'coche', 'automóvil': 'coche', 'carro': 'coche',
-            'autobús': 'autobús', 'bus': 'autobús', 'transporte': 'transporte', 'tren': 'tren', 'bicicleta': 'bicicleta',
-            'teléfono': 'teléfono', 'celular': 'teléfono', 'móvil': 'teléfono', 'phone': 'teléfono',
-            'computadora': 'ordenador', 'ordenador': 'ordenador', 'computador': 'ordenador', 'laptop': 'ordenador', 'pc': 'ordenador',
-            'televisión': 'televisión', 'televisor': 'televisión', 'tv': 'televisión', 'tele': 'televisión',
-            'hambre': 'hambre', 'sed': 'sed', 'cansancio': 'cansancio', 'sueño': 'sueño',
-            'dolor': 'dolor', 'cabeza': 'cabeza', 'barriga': 'barriga', 'estómago': 'estómago', 'panza': 'estómago',
-            'escena': 'escena', 'película': 'película', 'música': 'música', 'canción': 'canción', 'ritmo': 'ritmo',
-            'dinero': 'dinero', 'pesos': 'dinero', 'euros': 'dinero', 'moneda': 'moneda',
-            'regalo': 'regalo', 'sorpresa': 'sorpresa', 'premio': 'premio',
-            'hospital': 'hospital', 'farmacia': 'farmacia', 'tienda': 'tienda', 'mercado': 'mercado', 'supermercado': 'supermercado',
-            'iglesia': 'iglesia', 'templo': 'templo', 'religión': 'religión'
-        };
-
-        const PHRASE_PATTERNS = [
-            { pattern: /tengo hambre/i, output: ['YO', 'HAMBRE'] },
-            { pattern: /tengo sed/i, output: ['YO', 'SED'] },
-            { pattern: /tengo frío/i, output: ['YO', 'FRÍO'] },
-            { pattern: /tengo calor/i, output: ['YO', 'CALOR'] },
-            { pattern: /tengo sueño/i, output: ['YO', 'SUEÑO'] },
-            { pattern: /tengo dolor/i, output: ['YO', 'DOLOR'] },
-            { pattern: /tengo miedo/i, output: ['YO', 'MIEDO'] },
-            { pattern: /me duele la cabeza/i, output: ['YO', 'DOLOR', 'CABEZA'] },
-            { pattern: /me duele la barriga/i, output: ['YO', 'DOLOR', 'BARRIGA'] },
-            { pattern: /me duele el estómago/i, output: ['YO', 'DOLOR', 'ESTÓMAGO'] },
-            { pattern: /buen(os)? días/i, output: ['BUENOS DÍAS'] },
-            { pattern: /buen(as)? tardes/i, output: ['BUENAS TARDES'] },
-            { pattern: /buen(as)? noches/i, output: ['BUENAS NOCHES'] },
-            { pattern: /por favor/i, output: ['POR FAVOR'] },
-            { pattern: /muchas gracias/i, output: ['GRACIAS'] },
-            { pattern: /gracias/i, output: ['GRACIAS'] },
-            { pattern: /de nada/i, output: ['DE NADA'] },
-            { pattern: /lo siento/i, output: ['DISCULPA'] },
-            { pattern: /perdón|disculpa/i, output: ['DISCULPA'] },
-            { pattern: /ir al baño/i, output: ['IR', 'BAÑO'] },
-            { pattern: /ir al parque/i, output: ['IR', 'PARQUE'] },
-            { pattern: /ir a la escuela/i, output: ['IR', 'ESCUELA'] },
-            { pattern: /ir a casa/i, output: ['IR', 'CASA'] },
-            { pattern: /ver televis(ión|or)/i, output: ['VER', 'TELEVISIÓN'] },
-            { pattern: /quiero jugar/i, output: ['QUERER', 'JUGAR'] },
-            { pattern: /quiero comer/i, output: ['QUERER', 'COMER'] },
-            { pattern: /quiero beber/i, output: ['QUERER', 'BEBER'] },
-            { pattern: /quiero dormir/i, output: ['QUERER', 'DORMIR'] },
-            { pattern: /quiero ir/i, output: ['QUERER', 'IR'] },
-            { pattern: /vamos al parque/i, output: ['VAMOS', 'PARQUE'] },
-            { pattern: /vamos a casa/i, output: ['VAMOS', 'CASA'] },
-            { pattern: /vamos a la escuela/i, output: ['VAMOS', 'ESCUELA'] },
-            { pattern: /estoy feliz/i, output: ['YO', 'CONTENTO'] },
-            { pattern: /estoy triste/i, output: ['YO', 'TRISTE'] },
-            { pattern: /estoy enfadado/i, output: ['YO', 'ENFADADO'] },
-            { pattern: /estoy cansado/i, output: ['YO', 'CANSADO'] },
-            { pattern: /estoy bien/i, output: ['YO', 'BIEN'] },
-            { pattern: /estoy mal/i, output: ['YO', 'MAL'] },
-            { pattern: /me siento bien/i, output: ['YO', 'BIEN'] },
-            { pattern: /me siento mal/i, output: ['YO', 'MAL'] },
-            { pattern: /necesito ayuda/i, output: ['NECESITAR', 'AYUDA'] },
-            { pattern: /necesito ir/i, output: ['NECESITAR', 'IR'] },
-            { pattern: /me gusta/i, output: ['GUSTAR'] },
-            { pattern: /no me gusta/i, output: ['NO', 'GUSTAR'] },
-            { pattern: /hola/i, output: ['HOLA'] },
-            { pattern: /adiós|hasta luego/i, output: ['ADIÓS'] },
-            { pattern: /buena suerte/i, output: ['SUERTE'] },
-        ];
-
-        function process(text) {
+        async function process(text) {
             if (!text || !text.trim()) return [];
 
-            // 1. Check phrase patterns first
-            for (const p of PHRASE_PATTERNS) {
-                if (p.pattern.test(text)) {
-                    return p.output;
+            // Try AI first if properly configured
+            if (CONFIG.USE_AI && GEMINI_API_KEY && GEMINI_API_KEY !== 'AQUI_TU_API_KEY') {
+                const aiResult = await processWithAI(text);
+                if (aiResult.length > 0) return aiResult;
+            }
+            
+            // Fallback mode
+            return processSimple(text);
+        }
+
+        async function processWithAI(text) {
+            try {
+                const prompt = `Eres experto en comunicación visual para personas con TEA. Extrae TODAS las palabras clave visuales (sustantivos, verbos de acción, conceptos concretos) de esta frase en español.\n\nFrase: "${text}"\n\nResponde ÚNICAMENTE con palabras clave separadas por comas (máximo 20, en minúsculas, sin explicaciones, sin puntos):\n`;
+
+                const response = await fetch(`${CONFIG.GEMINI_API}?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    }),
+                    signal: AbortSignal.timeout(10000)
+                });
+
+                if (!response.ok) {
+                    console.warn('Gemini error, using fallback:', response.status);
+                    return [];
+                }
+
+                const data = await response.json();
+                const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                if (!content) return [];
+
+                const keywords = content
+                    .split(',')
+                    .map(k => k.trim().toLowerCase().replace(/[^a-záéíóú\s]/g, ''))
+                    .filter(k => k.length > 1)
+                    .slice(0, 20);
+
+                console.log('AI Keywords:', keywords);
+                return keywords;
+            } catch (err) {
+                console.warn('Gemini processing error:', err);
+                return [];
+            }
+        }
+
+        function processSimple(text) {
+            // Fallback mode (sin IA) - mejorado con infinitivos
+            const lower = text.toLowerCase();
+            
+            // Check exact phrases first
+            for (const [phrase, keywords] of Object.entries(FALLBACK_MAP)) {
+                if (lower.includes(phrase)) {
+                    return keywords;
                 }
             }
 
-            // 2. Normalize
-            let normalized = text
-                .toLowerCase()
+            // Extract all words and filter inteligentemente
+            const words = lower
                 .replace(/[¿¡!?.,;:()"\[\]{}…—–\-]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
+                .split(/\s+/)
+                .filter(w => w.length > 0);
 
-            // 3. Tokenize
-            let tokens = normalized.split(' ').filter(t => t.length > 0);
-
-            // 4. Remove plurals
-            tokens = tokens.map(t => {
-                // Simple plural removal: es → e, s → nothing
-                if (t.endsWith('es') && t.length > 3) return t.slice(0, -2);
-                if (t.endsWith('s') && t.length > 2) return t.slice(0, -1);
-                return t;
-            });
-
-            // 5. Process each token
             const keywords = [];
             const seen = new Set();
 
-            for (const token of tokens) {
+            for (let word of words) {
+                // Skip if already added
+                if (seen.has(word)) continue;
+                
                 // Skip stop words
-                if (STOP_WORDS.has(token)) continue;
-
-                // Check pronouns
-                if (PRONOUN_MAP[token]) {
-                    const kw = PRONOUN_MAP[token];
-                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
-                    continue;
+                if (STOP_WORDS.has(word)) continue;
+                
+                // Skip very short words unless they're meaningful
+                if (word.length < 2) continue;
+                
+                // Try to convert to infinitive if it's a conjugated verb
+                if (VERB_TO_INFINITIVE[word]) {
+                    word = VERB_TO_INFINITIVE[word];
+                    if (seen.has(word)) continue;
                 }
-
-                // Check verbs → infinitive
-                if (VERB_INFINITIVE_MAP[token]) {
-                    const kw = VERB_INFINITIVE_MAP[token];
-                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
-                    continue;
+                
+                // Try to extract root from gerundios and participios
+                if (!VERB_TO_INFINITIVE[word]) {
+                    const root = extractVerbRoot(word);
+                    if (root && root !== word) {
+                        word = root;
+                        if (seen.has(word)) continue;
+                    }
                 }
+                
+                // Add the word
+                keywords.push(word);
+                seen.add(word);
 
-                // Check noun synonyms
-                if (NOUN_SYNONYMS[token]) {
-                    const kw = NOUN_SYNONYMS[token];
-                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
-                    continue;
-                }
-
-                // Check adjective synonyms
-                if (ADJECTIVE_SYNONYMS[token]) {
-                    const kw = ADJECTIVE_SYNONYMS[token];
-                    if (!seen.has(kw)) { keywords.push(kw); seen.add(kw); }
-                    continue;
-                }
-
-                // Try to detect verbs by common endings
-                const infinitive = tryGetInfinitive(token);
-                if (infinitive) {
-                    if (!seen.has(infinitive)) { keywords.push(infinitive); seen.add(infinitive); }
-                    continue;
-                }
-
-                // Use the word as-is (likely a noun or important word)
-                if (token.length > 1) {
-                    if (!seen.has(token)) { keywords.push(token); seen.add(token); }
-                }
+                // Allow up to 20 keywords
+                if (keywords.length >= 20) break;
             }
 
-            return keywords.length > 0 ? keywords : tokens.filter(t => t.length > 1);
+            console.log('Fallback Keywords:', keywords);
+            return keywords.length > 0 ? keywords : [];
         }
 
-        function tryGetInfinitive(word) {
-            // Common Spanish verb conjugation patterns → infinitive
-            const patterns = [
-                { regex: /(.+)emos$/, replace: 'ar' },
-                { regex: /(.+)amos$/, replace: 'ar' },
-                { regex: /(.+)áis$/, replace: 'ar' },
-                { regex: /(.+)an$/, replace: 'ar' },
-                { regex: /(.+)as$/, replace: 'ar' },
-                { regex: /(.+)a$/, replace: 'ar' },
-                { regex: /(.+)imos$/, replace: 'ir' },
-                { regex: /(.+)ís$/, replace: 'ir' },
-                { regex: /(.+)en$/, replace: 'er' },
-                { regex: /(.+)es$/, replace: 'er' },
-                { regex: /(.+)e$/, replace: 'er' },
-                { regex: /(.+)ó$/, replace: 'ar' },
-                { regex: /(.+)é$/, replace: 'ar' },
-                { regex: /(.+)ando$/, replace: 'ar' },
-                { regex: /(.+)iendo$/, replace: 'er' },
-                { regex: /(.+)ado$/, replace: 'ar' },
-                { regex: /(.+)ido$/, replace: 'er' },
-            ];
-
-            for (const p of patterns) {
-                const match = word.match(p.regex);
-                if (match && match[1].length >= 2) {
-                    const stem = match[1];
-                    const inf1 = stem + p.replace;
-                    // Verify it's a likely verb (stem not too short)
-                    if (stem.length >= 2) return inf1;
-                }
+        function extractVerbRoot(word) {
+            // Try to extract verb root from gerundios and participios
+            
+            // Gerundios: -ando, -endo, -iendo
+            if (word.endsWith('ando') && word.length > 5) {
+                return word.slice(0, -4); // Remove -ando
             }
+            if (word.endsWith('iendo') && word.length > 6) {
+                return word.slice(0, -5); // Remove -iendo
+            }
+            if (word.endsWith('endo') && word.length > 5) {
+                return word.slice(0, -4); // Remove -endo
+            }
+            
+            // Participios pasados: -ado, -ido, -ada, -ida
+            if (word.endsWith('ado') && word.length > 4) {
+                return word.slice(0, -3);
+            }
+            if (word.endsWith('ida') && word.length > 4) {
+                return word.slice(0, -3);
+            }
+            if (word.endsWith('ido') && word.length > 4) {
+                return word.slice(0, -3);
+            }
+            
             return null;
         }
 
-        return { process, PRONOUN_MAP };
+        return { process };
     })();
 
     // ===== ARASAAC API MODULE =====
@@ -1605,7 +1514,8 @@
         }
 
         async function searchBest(term) {
-            const results = await search(term);
+            // Try direct search first
+            let results = await search(term);
             if (results.length > 0) {
                 const item = results[0];
                 return {
@@ -1614,6 +1524,56 @@
                     imageUrl: getImageUrl(item._id)
                 };
             }
+
+            // Build comprehensive list of variations
+            const variations = [];
+            
+            // 1. Remove accents
+            const noAccent = term.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (noAccent !== term) variations.push(noAccent);
+            
+            // 2. Singular/plural
+            variations.push(
+                term.endsWith('s') ? term.slice(0, -1) : term + 's',
+                term.endsWith('es') ? term.slice(0, -2) : null,
+                term.endsWith('as') ? term.slice(0, -2) : null
+            );
+            
+            // 3. Gender variations (a/o)
+            if (term.endsWith('o')) variations.push(term.slice(0, -1) + 'a');
+            if (term.endsWith('a')) variations.push(term.slice(0, -1) + 'o');
+            
+            // 4. Root word approximations
+            if (term.length > 4) {
+                variations.push(
+                    term.slice(0, -1),  // Remove last char
+                    term.slice(0, -2),  // Remove last 2 chars
+                    term.slice(0, 4)    // First 4 chars
+                );
+            }
+            
+            // 5. Common suffix removals
+            if (term.endsWith('ando')) variations.push(term.slice(0, -4));  // gerundio
+            if (term.endsWith('endo')) variations.push(term.slice(0, -4));  // gerundio
+            if (term.endsWith('iendo')) variations.push(term.slice(0, -5)); // gerundio
+            
+            // 6. Remove duplicates and filter
+            const uniqueVariations = [...new Set(variations)]
+                .filter(v => v && v !== term && v.length > 1);
+            
+            // Try each variation
+            for (const variant of uniqueVariations) {
+                results = await search(variant);
+                if (results.length > 0) {
+                    const item = results[0];
+                    return {
+                        id: item._id,
+                        keyword: getBestKeyword(item, term),
+                        imageUrl: getImageUrl(item._id)
+                    };
+                }
+            }
+
             return null;
         }
 
@@ -2200,8 +2160,8 @@
             UI.showLoading(true);
 
             try {
-                // 1. NLP processing
-                const keywords = SpanishNLP.process(text);
+                // 1. IA processing (context-aware or simple fallback)
+                const keywords = await GeminiAI.process(text);
 
                 if (keywords.length === 0) {
                     showToast('No se pudieron extraer palabras clave', 'error');
@@ -2246,7 +2206,7 @@
                     block: 'start'
                 });
 
-                showToast(`${currentSequence.length} pictogramas generados`, 'success');
+                showToast(`${currentSequence.filter(p => p.imageUrl).length} pictogramas encontrados`, 'success');
 
             } catch (err) {
                 console.error('Generation error:', err);
